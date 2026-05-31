@@ -3,8 +3,6 @@ package org.ilaria.progettosistemidistribuiti.Service;
 import dev.langchain4j.service.SystemMessage;
 import dev.langchain4j.service.spring.AiService;
 import org.ilaria.progettosistemidistribuiti.Model.DTO.AIAnalysisResultDTO;
-import org.ilaria.progettosistemidistribuiti.Model.DTO.TicketDTO;
-import org.ilaria.progettosistemidistribuiti.Model.Entity.Ticket;
 import org.springframework.context.annotation.Lazy;
 
 
