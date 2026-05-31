@@ -15,6 +15,9 @@ public interface TicketMapper {
     @Mapping(target = "state", ignore = true)
     @Mapping(target = "attachment", ignore = true)
     @Mapping(target = "start_date" , ignore = true)
+    @Mapping(target = "priority_level_AI" , ignore = true)
+    @Mapping(target = "category_AI" , ignore = true)
+    @Mapping(target = "keyword_AI" , ignore = true)
     Ticket toEntity(TicketDTO ticketDTO);
 
 }

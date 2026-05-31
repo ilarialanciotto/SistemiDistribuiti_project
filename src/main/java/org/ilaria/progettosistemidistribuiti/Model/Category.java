@@ -1,7 +1,7 @@
 package org.ilaria.progettosistemidistribuiti.Model;
 
 public enum Category {
-    wide,
+    network,
     database,
     bug,
     configuration,

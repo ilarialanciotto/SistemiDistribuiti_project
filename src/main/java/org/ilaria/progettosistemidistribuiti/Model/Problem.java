@@ -4,6 +4,6 @@ public enum Problem {
      software,
      hardware,
      web_service,
-     wide_configuration ,
+     network_configuration,
      generic
 }

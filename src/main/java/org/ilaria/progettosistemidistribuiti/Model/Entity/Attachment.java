@@ -17,7 +17,10 @@ public class Attachment {
     private Long id;
 
     private String name;
+
+    @Column(columnDefinition = "TEXT")
     private String content;
+
     private String format;
 
     @OneToOne(mappedBy = "attachment")

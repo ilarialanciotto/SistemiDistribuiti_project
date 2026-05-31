@@ -4,11 +4,8 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.ilaria.progettosistemidistribuiti.Model.Category;
-import org.ilaria.progettosistemidistribuiti.Model.Level;
-
-
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -22,11 +19,17 @@ public class Ticket {
         private Long id;
 
         private String problem_title;
+
+        @Column(columnDefinition = "TEXT")
         private String description;
-        private Category category;
-        private Level urgency_percepite;
+
+        private String category;
+        private String urgency_percepite;
+        private Integer priority_level_AI = -1;
         private LocalDateTime start_date;
-        private String state;
+        private String category_AI;
+        private String keyword_AI;
+        private String state = "sent";
 
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "attachment_id", referencedColumnName = "id")

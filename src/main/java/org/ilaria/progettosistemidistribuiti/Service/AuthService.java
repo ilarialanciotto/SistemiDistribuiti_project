@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 
 import org.ilaria.progettosistemidistribuiti.Model.DTO.UserDTO;
 import org.ilaria.progettosistemidistribuiti.Model.Entity.User;
+import org.ilaria.progettosistemidistribuiti.Model.Role;
 import org.ilaria.progettosistemidistribuiti.Repository.AuthRepository;
 import org.ilaria.progettosistemidistribuiti.Security.JwtResponse;
 import org.ilaria.progettosistemidistribuiti.Security.JwtUtils;
@@ -40,6 +41,7 @@ public class AuthService {
         if(!StringUtils.hasText(dto.getPassword()) || !dto.getEmail().matches(regex))
             throw new RuntimeException("Password or email format incorrect");
         user.setPassword(passwordEncoder.encode(dto.getPassword()));
+        user.setRole(Role.user.name());
         authRepository.save(user);
     }
 
