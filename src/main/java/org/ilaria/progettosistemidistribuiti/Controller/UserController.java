@@ -29,7 +29,7 @@ public class UserController {
     public ResponseEntity<String> createTicket(
             @RequestParam(value = "ticket", required = false) String ticketJson,
             @RequestParam(value = "file", required = false) MultipartFile file
-    ) throws IOException {
+    ) {
         try {
             TicketDTO ticketDTO = null;
             if (ticketJson != null  && !ticketJson.isBlank() && !ticketJson.contains("\"problem_title\":\"\"")) {

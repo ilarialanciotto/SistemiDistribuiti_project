@@ -10,5 +10,5 @@ import lombok.Data;
 public class AIAnalysisResultDTO {
     private String keyword;
     private String category;
-    private int priority_level;
+    private String priority_level;
 }

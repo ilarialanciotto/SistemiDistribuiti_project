@@ -35,6 +35,11 @@ public class Ticket {
     @JoinColumn(name = "attachment_id", referencedColumnName = "id")
     Attachment attachment;
 
-
-
+    @Override
+    public String toString() {
+            return "problem_title: " + problem_title + " description: " + description +
+                    " category: " + category + " urgency_percepite: " + urgency_percepite +
+                    " priority_level_AI: " + priority_level_AI + " start_date:" + start_date +
+                    " state: " + state + " attachment: " + attachment;
+    }
 }

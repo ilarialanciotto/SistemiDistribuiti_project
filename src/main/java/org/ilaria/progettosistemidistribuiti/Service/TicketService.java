@@ -1,30 +1,36 @@
 package org.ilaria.progettosistemidistribuiti.Service;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.ilaria.progettosistemidistribuiti.Model.Category;
 import org.ilaria.progettosistemidistribuiti.Model.DTO.AttachmentDTO;
+import org.ilaria.progettosistemidistribuiti.Model.DTO.TicketAdminDTO;
 import org.ilaria.progettosistemidistribuiti.Model.DTO.TicketDTO;
 import org.ilaria.progettosistemidistribuiti.Model.Entity.Attachment;
 import org.ilaria.progettosistemidistribuiti.Model.Entity.Ticket;
 import org.ilaria.progettosistemidistribuiti.Model.Level;
 import org.ilaria.progettosistemidistribuiti.Repository.TicketRepository;
 import org.ilaria.progettosistemidistribuiti.Service.Mapper.AttachmentMapper;
+import org.ilaria.progettosistemidistribuiti.Service.Mapper.TicketAdminMapper;
 import org.ilaria.progettosistemidistribuiti.Service.Mapper.TicketMapper;
+import org.jspecify.annotations.Nullable;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.ObjectMapper;
-
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RequiredArgsConstructor
 @Service
 public class TicketService {
 
+    private final TicketAdminMapper ticketAdminMapper;
     private final TicketMapper ticketMapper;
     private final AttachmentMapper attachmentMapper;
     private final TicketRepository ticketRepository;
@@ -37,7 +43,6 @@ public class TicketService {
             String name = file.getOriginalFilename();
             String format = file.getContentType();
             String content = new String(file.getBytes(), StandardCharsets.UTF_8);
-
             if (ticketDTO!=null) {
                 AttachmentDTO attachmentDTO = new AttachmentDTO(name, content, format);
                 saveSingleTicket(ticketDTO,now,attachmentDTO);
@@ -68,7 +73,6 @@ public class TicketService {
             ticket.setAttachment(attachment);
 
         }
-
         ticketRepository.save(ticket);
     }
 
@@ -81,31 +85,15 @@ public class TicketService {
                     nuovoDto.setProblem_title(chunk[0].trim());
                     nuovoDto.setDescription(chunk[1].trim());
                     if (chunk.length >= 3) {
-                        nuovoDto.setCategory(tryParseCategory(chunk[2].trim()));
+                        nuovoDto.setCategory(Category.valueOf(chunk[2].trim().toLowerCase()));
                     }
                     if (chunk.length >= 4) {
-                        nuovoDto.setUrgency_percepite(tryParseUrgency(chunk[3].trim()));
+                        nuovoDto.setUrgency_percepite(Level.valueOf(chunk[3].trim()));
                     }
                     saveSingleTicket(nuovoDto, now, null);
                 }
             }
         });
-    }
-
-    private Category tryParseCategory(String value) {
-        try {
-            return Category.valueOf(value.toLowerCase());
-        } catch (Exception e) {
-            return Category.other;
-        }
-    }
-
-    private Level tryParseUrgency(String value) {
-        try {
-            return Level.valueOf(value.toLowerCase());
-        } catch (Exception e) {
-            return Level.low;
-        }
     }
 
     private void parseAndSaveJson(byte[] content,LocalDateTime now) {
@@ -120,4 +108,30 @@ public class TicketService {
         }
     }
 
+    public LinkedList<TicketAdminDTO> view() {
+        LinkedList<TicketAdminDTO> ticketList = new LinkedList<>();
+        for (Ticket ticket : ticketRepository.findAll()) {
+            ticketList.add(ticketAdminMapper.toDto(ticket));
+        }
+        return ticketList;
+    }
+
+    @Transactional
+    public void modifiedState(TicketAdminDTO ticketAdmin, String newState) {
+        ticketRepository.updateState(ticketAdmin.getProblem_title(),newState);
+    }
+
+    public List<TicketAdminDTO> search(String category, String keyword, Integer priority, String state, LocalDateTime startDate) {
+        return ticketRepository.findAll().stream()
+                .filter(t -> category == null || t.getCategory().equalsIgnoreCase(category) || (t.getCategory_AI() != null && t.getCategory_AI().equalsIgnoreCase(category)))
+                .filter(t -> state == null || t.getState().equalsIgnoreCase(state))
+                .filter(t -> priority == null || t.getPriority_level_AI().equals(priority))
+                .filter(t -> startDate == null || t.getStart_date().isAfter(startDate))
+                .filter(t -> keyword == null ||
+                        t.getProblem_title().toLowerCase().contains(keyword.toLowerCase()) ||
+                        t.getDescription().toLowerCase().contains(keyword.toLowerCase()) ||
+                        (t.getKeyword_AI() != null && t.getKeyword_AI().toLowerCase().contains(keyword.toLowerCase())))
+                .map(ticketAdminMapper::toDto)
+                .collect(Collectors.toList());
+    }
 }

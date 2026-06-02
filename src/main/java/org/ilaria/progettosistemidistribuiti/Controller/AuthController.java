@@ -3,7 +3,6 @@ package org.ilaria.progettosistemidistribuiti.Controller;
 import lombok.AllArgsConstructor;
 import org.ilaria.progettosistemidistribuiti.Model.DTO.UserDTO;
 import org.ilaria.progettosistemidistribuiti.Service.AuthService;
-import org.ilaria.progettosistemidistribuiti.Service.TicketService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 

@@ -31,11 +31,10 @@ public class AuthService {
     private final UserMapper userMapper;
     private final AuthenticationManager authenticationManager;
     private final JwtUtils jwtUtils;
-    private final Utils utils;
 
     public void register(UserDTO dto) {
         User user = userMapper.toEntity(dto);
-        if (utils.findUserRegister(dto.getEmail())!=null) { throw new RuntimeException("Email already registered"); }
+        if (authRepository.findByEmail(dto.getEmail())!=null) { throw new RuntimeException("Email already registered"); }
 
         String regex = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$";
         if(!StringUtils.hasText(dto.getPassword()) || !dto.getEmail().matches(regex))

@@ -25,4 +25,9 @@ public class Attachment {
 
     @OneToOne(mappedBy = "attachment")
     private Ticket ticket;
+
+    @Override
+    public String toString(){
+        return "Content: " + content;
+    }
 }
