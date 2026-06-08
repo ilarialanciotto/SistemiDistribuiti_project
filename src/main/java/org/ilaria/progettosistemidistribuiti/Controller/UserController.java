@@ -2,6 +2,7 @@ package org.ilaria.progettosistemidistribuiti.Controller;
 
 import lombok.AllArgsConstructor;
 import org.ilaria.progettosistemidistribuiti.Model.DTO.TicketDTO;
+import org.ilaria.progettosistemidistribuiti.Service.AI.AIService;
 import org.ilaria.progettosistemidistribuiti.Service.TicketService;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;

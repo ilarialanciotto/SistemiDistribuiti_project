@@ -1,5 +1,11 @@
 package org.ilaria.progettosistemidistribuiti.Service;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.criteria.CriteriaBuilder;
+import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.ilaria.progettosistemidistribuiti.Model.Category;
@@ -10,6 +16,7 @@ import org.ilaria.progettosistemidistribuiti.Model.Entity.Attachment;
 import org.ilaria.progettosistemidistribuiti.Model.Entity.Ticket;
 import org.ilaria.progettosistemidistribuiti.Model.Level;
 import org.ilaria.progettosistemidistribuiti.Repository.TicketRepository;
+import org.ilaria.progettosistemidistribuiti.Service.AI.AIService;
 import org.ilaria.progettosistemidistribuiti.Service.Mapper.AttachmentMapper;
 import org.ilaria.progettosistemidistribuiti.Service.Mapper.TicketAdminMapper;
 import org.ilaria.progettosistemidistribuiti.Service.Mapper.TicketMapper;
@@ -22,6 +29,7 @@ import tools.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -34,6 +42,10 @@ public class TicketService {
     private final TicketMapper ticketMapper;
     private final AttachmentMapper attachmentMapper;
     private final TicketRepository ticketRepository;
+    private final AIService aiService;
+
+    @PersistenceContext
+    private EntityManager entityManager; // Consente di creare query dinamiche
 
     public void load(TicketDTO ticketDTO, MultipartFile file) throws IOException {
 
@@ -74,6 +86,7 @@ public class TicketService {
 
         }
         ticketRepository.save(ticket);
+        aiService.AIAnalysis(ticketDTO);
     }
 
     private void parseAndSaveText(String content, LocalDateTime now) {
@@ -117,21 +130,59 @@ public class TicketService {
     }
 
     @Transactional
+    public void deleteTicket(String problem_title) {
+        ticketRepository.deleteTicket(problem_title);
+    }
+
+    @Transactional
     public void modifiedState(TicketAdminDTO ticketAdmin, String newState) {
         ticketRepository.updateState(ticketAdmin.getProblem_title(),newState);
     }
 
-    public List<TicketAdminDTO> search(String category, String keyword, Integer priority, String state, LocalDateTime startDate) {
-        return ticketRepository.findAll().stream()
-                .filter(t -> category == null || t.getCategory().equalsIgnoreCase(category) || (t.getCategory_AI() != null && t.getCategory_AI().equalsIgnoreCase(category)))
-                .filter(t -> state == null || t.getState().equalsIgnoreCase(state))
-                .filter(t -> priority == null || t.getPriority_level_AI().equals(priority))
-                .filter(t -> startDate == null || t.getStart_date().isAfter(startDate))
-                .filter(t -> keyword == null ||
-                        t.getProblem_title().toLowerCase().contains(keyword.toLowerCase()) ||
-                        t.getDescription().toLowerCase().contains(keyword.toLowerCase()) ||
-                        (t.getKeyword_AI() != null && t.getKeyword_AI().toLowerCase().contains(keyword.toLowerCase())))
+    public List<TicketAdminDTO> search(String category, String keyword, Integer priority, String state,
+                                        LocalDateTime startDate) {
+
+        if (category == null && keyword == null && priority == null && state == null && startDate == null) {
+            return ticketRepository.findAll().stream()
+                    .map(ticketAdminMapper::toDto)
+                    .collect(Collectors.toList());
+        }
+
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaQuery<Ticket> query = cb.createQuery(Ticket.class);
+        Root<Ticket> ticket = query.from(Ticket.class);
+        List<Predicate> predicates = new ArrayList<>();
+
+        if (category != null && !category.isBlank()) {
+            String lowerCat = category.toLowerCase();
+            predicates.add(cb.or(
+                    cb.equal(cb.lower(ticket.get("category")), lowerCat),
+                    cb.equal(cb.lower(ticket.get("category_AI")), lowerCat)
+            ));
+        }
+
+        if (state != null && !state.isBlank()) {
+            predicates.add(cb.equal(cb.lower(ticket.get("state")), state.toLowerCase()));
+        }
+
+        if (priority != null) {
+            predicates.add(cb.equal(ticket.get("priority_level_AI"), priority));
+        }
+
+        if (startDate != null) {
+            predicates.add(cb.greaterThanOrEqualTo(ticket.get("start_date"), startDate));
+        }
+
+        if (keyword != null && !keyword.isBlank()) {
+            String matchKeyword = "%" + keyword.toLowerCase() + "%";
+            predicates.add(cb.like(cb.lower(ticket.get("keyword_AI")), matchKeyword));
+        }
+
+        query.where(cb.and(predicates.toArray(new Predicate[0])));
+
+        return entityManager.createQuery(query).getResultList().stream()
                 .map(ticketAdminMapper::toDto)
                 .collect(Collectors.toList());
     }
+
 }

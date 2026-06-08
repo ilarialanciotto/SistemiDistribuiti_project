@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.ilaria.progettosistemidistribuiti.Model.Entity.User;
 import org.ilaria.progettosistemidistribuiti.Model.Role;
 import org.ilaria.progettosistemidistribuiti.Repository.AuthRepository;
+import org.ilaria.progettosistemidistribuiti.Service.AI.AIService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;

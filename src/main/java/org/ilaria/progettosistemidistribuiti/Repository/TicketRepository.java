@@ -29,4 +29,9 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
     @Transactional
     @Query("UPDATE Ticket T SET T.state = :newState WHERE T.problem_title = :problemTitle")
     void updateState(@Param("problemTitle")String problemTitle, @Param("newState")String newState);
+
+    @Modifying
+    @Transactional
+    @Query("DELETE FROM Ticket T WHERE T.problem_title =:problem_title")
+    void deleteTicket(@Param("problem_title")String problem_title);
 }

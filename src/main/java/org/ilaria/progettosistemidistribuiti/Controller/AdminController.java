@@ -21,7 +21,6 @@ import java.util.List;
 @AllArgsConstructor
 public class AdminController {
 
-    private final AIService aiService;
     private final TicketService ticketService;
 
     @GetMapping("/view")
@@ -61,13 +60,13 @@ public class AdminController {
         }
     }
 
-    @PostMapping("/analysisAI")
-    public ResponseEntity<String> AIanalysis(@RequestBody TicketAdminDTO ticketAdminDTO) {
+    @PostMapping("/deleteTicket")
+    public ResponseEntity<String> deleteTicket(@RequestBody String problem_title) {
         try {
-            aiService.AIAnalysis(ticketAdminDTO);
-            return ResponseEntity.ok("AI analysis done");
+            ticketService.deleteTicket(problem_title);
+            return ResponseEntity.ok("delete successful");
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body("failed");
+            return ResponseEntity.badRequest().body("delete failed");
         }
     }
 
