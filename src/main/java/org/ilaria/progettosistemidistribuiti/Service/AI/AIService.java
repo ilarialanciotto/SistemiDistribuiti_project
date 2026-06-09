@@ -26,9 +26,8 @@ public class AIService {
 
     @Async
     @Transactional
-    public void AIAnalysis(TicketDTO ticketDTO) {
-        Ticket ticket = ticketRepository.getTicketByProblem_title(ticketDTO.getProblem_title());
-        String description = ticketDTO.getDescription();
+    public void AIAnalysis(Ticket ticket) {
+        String description = ticket.getDescription();
         if(ticket.getAttachment()!=null){
             description += ticket.getAttachment().getContent();
         }

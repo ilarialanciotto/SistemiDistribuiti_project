@@ -20,7 +20,6 @@ import org.ilaria.progettosistemidistribuiti.Service.AI.AIService;
 import org.ilaria.progettosistemidistribuiti.Service.Mapper.AttachmentMapper;
 import org.ilaria.progettosistemidistribuiti.Service.Mapper.TicketAdminMapper;
 import org.ilaria.progettosistemidistribuiti.Service.Mapper.TicketMapper;
-import org.jspecify.annotations.Nullable;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -45,7 +44,7 @@ public class TicketService {
     private final AIService aiService;
 
     @PersistenceContext
-    private EntityManager entityManager; // Consente di creare query dinamiche
+    private EntityManager entityManager;
 
     public void load(TicketDTO ticketDTO, MultipartFile file) throws IOException {
 
@@ -67,7 +66,7 @@ public class TicketService {
             if (contentType != null && contentType.equals(MediaType.APPLICATION_JSON_VALUE)) {
                 parseAndSaveJson(bytes,now);
             } else {
-                parseAndSaveText(new String(bytes, StandardCharsets.UTF_8),now);
+                parseAndSaveCSV(new String(bytes, StandardCharsets.UTF_8),now);
             }
         }
         if(file==null) saveSingleTicket(ticketDTO,now,null);
@@ -86,10 +85,10 @@ public class TicketService {
 
         }
         ticketRepository.save(ticket);
-        aiService.AIAnalysis(ticketDTO);
+        aiService.AIAnalysis(ticket);
     }
 
-    private void parseAndSaveText(String content, LocalDateTime now) {
+    private void parseAndSaveCSV(String content, LocalDateTime now) {
         content.lines().forEach(row -> {
             if (!row.isBlank()) {
                 String[] chunk = row.split("\\|");
@@ -100,7 +99,7 @@ public class TicketService {
                     if (chunk.length >= 3) {
                         nuovoDto.setCategory(Category.valueOf(chunk[2].trim().toLowerCase()));
                     }
-                    if (chunk.length >= 4) {
+                    if (chunk.length == 4) {
                         nuovoDto.setUrgency_percepite(Level.valueOf(chunk[3].trim()));
                     }
                     saveSingleTicket(nuovoDto, now, null);
@@ -130,13 +129,13 @@ public class TicketService {
     }
 
     @Transactional
-    public void deleteTicket(String problem_title) {
-        ticketRepository.deleteTicket(problem_title);
+    public void deleteTicket(long id) {
+        ticketRepository.deleteTicket(id);
     }
 
     @Transactional
     public void modifiedState(TicketAdminDTO ticketAdmin, String newState) {
-        ticketRepository.updateState(ticketAdmin.getProblem_title(),newState);
+        ticketRepository.updateState(ticketAdmin.getId(),newState);
     }
 
     public List<TicketAdminDTO> search(String category, String keyword, Integer priority, String state,

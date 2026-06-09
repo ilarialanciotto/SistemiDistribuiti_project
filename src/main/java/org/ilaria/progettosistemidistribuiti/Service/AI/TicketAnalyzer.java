@@ -11,7 +11,7 @@ import org.springframework.context.annotation.Lazy;
 public interface TicketAnalyzer {
 
     @SystemMessage("""
-        Sei un analista di ticket IT. Il tuo compito è leggere il ticket e produrre un JSON.
+        Sei un analista di ticket IT. Il tuo compito è leggere e analizzare il ticket e produrre un JSON.
         REGOLE RIGIDE:
         1. Estrai parole chiave e inseriscile come stringa del campo keyword separate da , senza spazi
         2. Classifica in: network, database, bug, configuration, other, in base a tutto il ticket e inserisci il risultato nel cambo category

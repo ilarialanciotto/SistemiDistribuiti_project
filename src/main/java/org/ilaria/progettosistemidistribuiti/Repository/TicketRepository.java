@@ -12,6 +12,9 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface TicketRepository extends JpaRepository<Ticket, Long> {
 
+    @Query("SELECT T FROM Ticket T WHERE T.id=:id")
+    Ticket findById(@Param("id")long id);
+
     @Modifying
     @Transactional
     @Query("UPDATE Ticket T SET T.category_AI = :categoryAI, T.keyword_AI = :keywordAI, " +
@@ -27,11 +30,11 @@ public interface TicketRepository extends JpaRepository<Ticket, Long> {
 
     @Modifying
     @Transactional
-    @Query("UPDATE Ticket T SET T.state = :newState WHERE T.problem_title = :problemTitle")
-    void updateState(@Param("problemTitle")String problemTitle, @Param("newState")String newState);
+    @Query("UPDATE Ticket T SET T.state = :newState WHERE T.id = :id")
+    void updateState(@Param("id")long id, @Param("newState")String newState);
 
     @Modifying
     @Transactional
-    @Query("DELETE FROM Ticket T WHERE T.problem_title =:problem_title")
-    void deleteTicket(@Param("problem_title")String problem_title);
+    @Query("DELETE FROM Ticket T WHERE T.id =:id")
+    void deleteTicket(@Param("id")long id);
 }

@@ -28,14 +28,14 @@ public class UserController {
 
     @PostMapping(value = "/load", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<String> createTicket(
-            @RequestParam(value = "ticket", required = false) String ticketJson,
+            @RequestParam(value = "ticket", required = false) String ticket,
             @RequestParam(value = "file", required = false) MultipartFile file
     ) {
         try {
             TicketDTO ticketDTO = null;
-            if (ticketJson != null  && !ticketJson.isBlank() && !ticketJson.contains("\"problem_title\":\"\"")) {
+            if (ticket != null  && !ticket.isBlank() && !ticket.contains("\"problem_title\":\"\"")) {
                 ObjectMapper mapper = new ObjectMapper();
-                ticketDTO = mapper.readValue(ticketJson, TicketDTO.class);
+                ticketDTO = mapper.readValue(ticket, TicketDTO.class);
             }
             ticketService.load(ticketDTO, file);
             return ResponseEntity.ok("Ticket created successfully");

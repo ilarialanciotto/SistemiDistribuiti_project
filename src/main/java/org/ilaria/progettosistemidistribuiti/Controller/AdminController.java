@@ -61,9 +61,9 @@ public class AdminController {
     }
 
     @PostMapping("/deleteTicket")
-    public ResponseEntity<String> deleteTicket(@RequestBody String problem_title) {
+    public ResponseEntity<String> deleteTicket(@RequestBody long id) {
         try {
-            ticketService.deleteTicket(problem_title);
+            ticketService.deleteTicket(id);
             return ResponseEntity.ok("delete successful");
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body("delete failed");

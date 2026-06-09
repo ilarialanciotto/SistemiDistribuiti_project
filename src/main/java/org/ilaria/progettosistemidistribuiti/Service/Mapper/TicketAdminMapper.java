@@ -10,7 +10,6 @@ public interface TicketAdminMapper {
 
     TicketAdminDTO toDto(Ticket ticket);
 
-    @Mapping(target = "id", ignore = true)
     @Mapping(target = "attachment", ignore = true)
     Ticket toEntity(TicketAdminDTO ticketAdminDTO);
 

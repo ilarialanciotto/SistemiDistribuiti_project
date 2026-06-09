@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 @Data
 public class TicketAdminDTO {
 
+    private long id;
     private String problem_title;
     private String description;
     private Category category;
