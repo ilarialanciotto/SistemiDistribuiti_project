@@ -5,6 +5,9 @@ import org.ilaria.progettosistemidistribuiti.Model.DTO.RequestStateDTO;
 import org.ilaria.progettosistemidistribuiti.Model.DTO.TicketAdminDTO;
 import org.ilaria.progettosistemidistribuiti.Service.AI.AIService;
 import org.ilaria.progettosistemidistribuiti.Service.TicketService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -24,29 +27,32 @@ public class AdminController {
     private final TicketService ticketService;
 
     @GetMapping("/view")
-    public ResponseEntity<LinkedList<TicketAdminDTO>> viewTicket() {
+    public ResponseEntity<Page<TicketAdminDTO>> viewTicket(
+            @PageableDefault(size = 10, sort = "id") Pageable pageable
+    ) {
         try {
-            return ResponseEntity.ok(ticketService.view());
+            return ResponseEntity.ok(ticketService.view(pageable));
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().body(new LinkedList<>());
+            return ResponseEntity.badRequest().body(Page.empty());
         }
     }
 
     @GetMapping("/search")
-    public ResponseEntity<List<TicketAdminDTO>> search(
+    public ResponseEntity<Page<TicketAdminDTO>> search(
             @RequestParam(required = false) String category,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) Integer priority,
             @RequestParam(required = false) String state,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
+            @PageableDefault(size = 10) Pageable pageable
     ) {
         try {
-            List<TicketAdminDTO> results = ticketService.search(
-                    category, keyword, priority, state, startDate
+            Page<TicketAdminDTO> results = ticketService.search(
+                    category, keyword, priority, state, startDate, pageable
             );
             return ResponseEntity.ok(results);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(new LinkedList<>());
+            return ResponseEntity.badRequest().body(Page.empty());
         }
     }
 

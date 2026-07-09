@@ -2,6 +2,7 @@ package org.ilaria.progettosistemidistribuiti.Service;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
@@ -20,6 +21,9 @@ import org.ilaria.progettosistemidistribuiti.Service.AI.AIService;
 import org.ilaria.progettosistemidistribuiti.Service.Mapper.AttachmentMapper;
 import org.ilaria.progettosistemidistribuiti.Service.Mapper.TicketAdminMapper;
 import org.ilaria.progettosistemidistribuiti.Service.Mapper.TicketMapper;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -84,7 +88,7 @@ public class TicketService {
             ticket.setAttachment(attachment);
 
         }
-        ticketRepository.save(ticket);
+
         aiService.AIAnalysis(ticket);
     }
 
@@ -120,14 +124,6 @@ public class TicketService {
         }
     }
 
-    public LinkedList<TicketAdminDTO> view() {
-        LinkedList<TicketAdminDTO> ticketList = new LinkedList<>();
-        for (Ticket ticket : ticketRepository.findAll()) {
-            ticketList.add(ticketAdminMapper.toDto(ticket));
-        }
-        return ticketList;
-    }
-
     @Transactional
     public void deleteTicket(long id) {
         ticketRepository.deleteTicket(id);
@@ -138,13 +134,16 @@ public class TicketService {
         ticketRepository.updateState(ticketAdmin.getId(),newState);
     }
 
-    public List<TicketAdminDTO> search(String category, String keyword, Integer priority, String state,
-                                        LocalDateTime startDate) {
+    public Page<TicketAdminDTO> view(Pageable pageable) {
+        Page<Ticket> ticketPage = ticketRepository.findAll(pageable);
+        return ticketPage.map(ticketAdminMapper::toDto);
+    }
+
+    public Page<TicketAdminDTO> search(String category, String keyword, Integer priority, String state,
+                                       LocalDateTime startDate, Pageable pageable) {
 
         if (category == null && keyword == null && priority == null && state == null && startDate == null) {
-            return ticketRepository.findAll().stream()
-                    .map(ticketAdminMapper::toDto)
-                    .collect(Collectors.toList());
+            return ticketRepository.findAll(pageable).map(ticketAdminMapper::toDto);
         }
 
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
@@ -178,10 +177,41 @@ public class TicketService {
         }
 
         query.where(cb.and(predicates.toArray(new Predicate[0])));
+        TypedQuery<Ticket> typedQuery = entityManager.createQuery(query);
+        typedQuery.setFirstResult((int) pageable.getOffset());
+        typedQuery.setMaxResults(pageable.getPageSize());
+        List<Ticket> ticketResultList = typedQuery.getResultList();
+        CriteriaQuery<Long> countQuery = cb.createQuery(Long.class);
+        Root<Ticket> countRoot = countQuery.from(Ticket.class);
+        List<Predicate> countPredicates = new ArrayList<>();
 
-        return entityManager.createQuery(query).getResultList().stream()
+        if (category != null && !category.isBlank()) {
+            String lowerCat = category.toLowerCase();
+            countPredicates.add(cb.or(
+                    cb.equal(cb.lower(countRoot.get("category")), lowerCat),
+                    cb.equal(cb.lower(countRoot.get("category_AI")), lowerCat)
+            ));
+        }
+        if (state != null && !state.isBlank()) {
+            countPredicates.add(cb.equal(cb.lower(countRoot.get("state")), state.toLowerCase()));
+        }
+        if (priority != null) {
+            countPredicates.add(cb.equal(countRoot.get("priority_level_AI"), priority));
+        }
+        if (startDate != null) {
+            countPredicates.add(cb.greaterThanOrEqualTo(countRoot.get("start_date"), startDate));
+        }
+        if (keyword != null && !keyword.isBlank()) {
+            String matchKeyword = "%" + keyword.toLowerCase() + "%";
+            countPredicates.add(cb.like(cb.lower(countRoot.get("keyword_AI")), matchKeyword));
+        }
+
+        countQuery.select(cb.count(countRoot)).where(cb.and(countPredicates.toArray(new Predicate[0])));
+        Long totalElements = entityManager.createQuery(countQuery).getSingleResult();
+        List<TicketAdminDTO> dtoList = ticketResultList.stream()
                 .map(ticketAdminMapper::toDto)
                 .collect(Collectors.toList());
+        return new PageImpl<>(dtoList, pageable, totalElements);
     }
 
 }

@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 public class AIService {
 
 
-    private final TicketAnalyzer ticketAnalyzer;
+    private final LocalNlpAnalyzer ticketAnalyzer;
     private final TicketRepository ticketRepository;
 
     @Async
@@ -34,11 +34,12 @@ public class AIService {
 
         AIAnalysisResultDTO analysisResult = ticketAnalyzer.analyze(description);
         if (analysisResult != null) {
-            ticketRepository.update(ticket.getId(),
-                    analysisResult.getCategory(),
-                    Integer.valueOf(analysisResult.getPriority_level()),
-                    analysisResult.getKeyword(),
-                    State.ai_analyzed.name());
+            ticket.setPriority_level_AI(Integer.valueOf(analysisResult.getPriority_level()));
+            ticket.setKeyword_AI(analysisResult.getKeyword());
+            ticket.setCategory_AI(analysisResult.getCategory());
+            ticket.setState(State.ai_analyzed.name());
+            ticketRepository.save(ticket);
+
         }
     }
 }
