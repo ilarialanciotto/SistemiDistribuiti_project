@@ -1,0 +1,417 @@
+<div class="admin-layout" [class.blackboard-view-active]="currentView === 'blackboard'">
+
+  <aside class="sidebar shadow">
+    <div class="user-profile">
+      <div class="avatar-circle">
+        {{ currentUser?.username?.charAt(0)?.toUpperCase() }}
+      </div>
+      <div class="user-details">
+        <p class="username">{{ currentUser?.username }}</p>
+        <span class="role-badge">{{ role.toUpperCase() }}</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav-links">
+      <button class="nav-link-btn" [class.active]="currentView === 'tickets'" (click)="switchView('tickets')">
+        🎫 Gestione Ticket
+      </button>
+      <button class="nav-link-btn btn-chalk-nav" [class.active]="currentView === 'blackboard'" (click)="switchView('blackboard')">
+        📝 Lavagna Note
+      </button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <button class="logout-btn" (click)="onLogout()">
+        <span class="icon">🚪</span> Logout
+      </button>
+    </div>
+  </aside>
+
+  <main class="content-area">
+
+    <ng-container *ngIf="currentView === 'tickets'">
+      <div class="animate-fade-in">
+        <header class="main-header">
+          <h1>Gestione Ticket</h1>
+          <div class="header-actions">
+
+            <button
+              *ngIf="selectedRows.size > 0"
+              class="btn-danger animate-fade-in"
+              (click)="triggerDeleteConfirm()"
+              [disabled]="isLoading">
+              🗑️ Elimina ({{ selectedRows.size }})
+            </button>
+
+            <button class="icon-btn" (click)="loadTickets(); loadStats()" [disabled]="isLoading" title="Refresh">
+              <span [class.spin]="isLoading">🔄</span>
+            </button>
+          </div>
+        </header>
+
+        <div class="search-section shadow">
+          <div class="search-bar">
+            <div class="input-group">
+              <span class="search-icon">🔍</span>
+              <input type="text" [(ngModel)]="filters.keyword" placeholder="Cerca parole chiave..." (keyup.enter)="onSearch(true)">
+            </div>
+            <div class="filter-actions">
+              <button class="filter-toggle" (click)="showFilterMenu = !showFilterMenu" [class.active]="showFilterMenu">
+                ⚙️ Filtri
+              </button>
+              <button class="btn-primary" (click)="onSearch(true)">Cerca</button>
+            </div>
+          </div>
+
+          <div class="filter-panel" *ngIf="showFilterMenu">
+            <div class="filter-grid">
+              <div class="filter-group">
+                <label>Categoria</label>
+                <select [(ngModel)]="filters.category">
+                  <option value="">Tutte</option>
+                  <option *ngFor="let cat of allCategories" [value]="cat">{{cat}}</option>
+                </select>
+              </div>
+              <div class="filter-group">
+                <label>Stato</label>
+                <select [(ngModel)]="filters.state">
+                  <option value="">Tutti</option>
+                  <option *ngFor="let s of allStates" [value]="s">{{s}}</option>
+                </select>
+              </div>
+              <div class="filter-group">
+                <label>Priorità</label>
+                <select [(ngModel)]="filters.priority">
+                  <option [ngValue]="null">Tutte</option>
+                  <option *ngFor="let p of priorities" [value]="p">{{p}}</option>
+                </select>
+              </div>
+              <div class="filter-group">
+                <label>Da data</label>
+                <input type="datetime-local" [(ngModel)]="filters.startDate">
+              </div>
+            </div>
+          </div>
+
+          <div class="analytics-container animate-scale-up" *ngIf="stats">
+            <div class="analytics-card card-efficiency shadow">
+              <div class="card-header-clean">
+                <span class="icon-wrapper bg-light-green">🎯</span>
+                <h3>Efficienza Operativa</h3>
+              </div>
+              <div class="card-body-center">
+                <div class="circular-chart" [style.background]="'conic-gradient(#38a169 ' + stats.closedRate + '%, #eaecf4 0)'">
+                  <div class="inner-circle">
+                    <span class="chart-number">{{ stats.closedRate }}%</span>
+                    <span class="chart-label">Risolti</span>
+                  </div>
+                </div>
+              </div>
+              <div class="card-footer-info">Su un totale di <strong>{{ stats.totalTickets }}</strong> ticket.</div>
+            </div>
+
+            <div class="analytics-card card-threat shadow">
+              <div class="card-header-clean">
+                <span class="icon-wrapper bg-light-red">🚨</span>
+                <h3>Livello di Minaccia IT</h3>
+              </div>
+              <div class="card-body-threat">
+                <div class="threat-status" [class.danger-active]="stats.criticalUnresolved > 0">
+                  <span class="threat-pulse" *ngIf="stats.criticalUnresolved > 0"></span>
+                  <p class="threat-number">{{ stats.criticalUnresolved }}</p>
+                  <p class="threat-text">CRITICITÀ</p>
+                </div>
+              </div>
+              <div class="card-footer-info">Sistemi distribuiti monitorati.</div>
+            </div>
+
+            <div class="analytics-card card-chart shadow">
+              <div class="card-header-clean">
+                <span class="icon-wrapper bg-light-blue">📊</span>
+                <h3>Distribuzione Emergenze</h3>
+              </div>
+              <div class="card-body-bars" *ngIf="stats.highPriorityDistribution?.length > 0; else noCriticalData">
+                <div class="modern-bar-row" *ngFor="let item of stats.highPriorityDistribution">
+                  <div class="bar-labels">
+                    <span class="bar-category">{{ item.category }}</span>
+                    <span class="bar-count"><strong>{{ item.count }}</strong></span>
+                  </div>
+                  <div class="bar-track-modern">
+                    <div class="bar-fill-modern" [style.width.%]="item.percentage" [attr.data-cat]="item.category.toLowerCase()"></div>
+                  </div>
+                </div>
+              </div>
+              <ng-template #noCriticalData>
+                <div class="clean-placeholder-green">
+                  <span class="shield-icon">🛡️</span>
+                  <p>Nessun incidente critico rilevato.</p>
+                </div>
+              </ng-template>
+            </div>
+          </div>
+        </div>
+
+        <div class="table-card shadow">
+          <table class="modern-table">
+            <thead>
+            <tr>
+              <th><input type="checkbox" (change)="toggleAll()" [checked]="isAllSelected()"></th>
+              <th>Titolo Ticket</th>
+              <th>Categoria IA</th>
+              <th>Priorità IA</th>
+              <th class="text-center">Azioni</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr *ngFor="let t of tickets;" [class.row-active]="selectedRows.has(t.id)">
+              <td>
+                <input type="checkbox" (change)="toggleRow(t.id); $event.stopPropagation()" [checked]="selectedRows.has(t.id)">
+              </td>
+              <td class="ticket-cell">
+                <span class="ticket-title-only">{{ t.problem_title }}</span>
+              </td>
+              <td class="ai-cell">
+                <div *ngIf="t.category_AI; else pendingCat" class="ai-compact-container">
+                  <span class="ai-category-badge">{{ t.category_AI }}</span>
+                  <div class="ai-keywords-list">
+                    <span *ngFor="let key of getKeywordList(t.keyword_AI)" class="keyword-tag">{{ key }}</span>
+                  </div>
+                </div>
+                <ng-template #pendingCat><span class="wait-text">⏳ In attesa...</span></ng-template>
+              </td>
+              <td>
+                <div *ngIf="t.category_AI; else pendingPrio">
+                  <span [ngClass]="getPriorityClass(t.priority_level_AI)" class="prio-badge">
+                    Grado {{ t.priority_level_AI > 0 ? t.priority_level_AI : '-' }}
+                  </span>
+                </div>
+                <ng-template #pendingPrio><span class="wait-text">-</span></ng-template>
+              </td>
+              <td class="text-center">
+                <button class="btn-info-circle" (click)="openInfoModal(t)">
+                  <span class="info-icon">ℹ️</span> Dettagli
+                </button>
+              </td>
+            </tr>
+            </tbody>
+          </table>
+
+          <div class="pagination-container" *ngIf="totalPages > 1">
+            <div class="pagination-controls">
+              <button class="page-btn nav-btn" [disabled]="currentPage === 0" (click)="onPageChange(currentPage - 1)">◀ Precedente</button>
+              <button *ngFor="let p of pageNumbersArray" class="page-btn num-btn" [class.active]="currentPage === p" (click)="onPageChange(p)">{{ p + 1 }}</button>
+              <button class="page-btn nav-btn" [disabled]="currentPage === totalPages - 1" (click)="onPageChange(currentPage + 1)">Successivo ▶</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+
+    <ng-container *ngIf="currentView === 'blackboard'">
+      <div class="full-blackboard-workspace animate-fade-in">
+
+        <header class="blackboard-view-header">
+          <div class="header-text">
+            <h2>📝 Lavagna Annotazioni e Debug Rapido</h2>
+          </div>
+        </header>
+
+        <div class="blackboard-workspace-grid">
+
+          <div class="blackboard-col-form">
+            <div class="glass-chalk-form">
+              <h3>✍️ Registra Intervento</h3>
+              <p class="form-desc">Annota le operazioni effettuate in produzione.</p>
+
+              <div class="chalk-group">
+                <label>Collega al Ticket Attivo *</label>
+                <select [(ngModel)]="newNote.id_Ticket" class="chalk-select">
+                  <option [value]="0" disabled selected>-- Seleziona un ticket --</option>
+                  <option *ngFor="let t of tickets" [value]="t.id">
+                    [ID #{{ t.id }}] - {{ t.problem_title | slice:0:35 }}{{ t.problem_title.length > 35 ? '...' : '' }}
+                  </option>
+                </select>
+              </div>
+
+              <div class="chalk-group">
+                <label>Titolo Annotazione *</label>
+                <input type="text" [(ngModel)]="newNote.title" placeholder="Es. Patch hotfix applicata sul DB..." class="chalk-input">
+              </div>
+
+              <div class="chalk-group">
+                <label>Dettagli dell'intervento (Markdown/Log) *</label>
+                <textarea [(ngModel)]="newNote.content" placeholder="Scrivi log di errore o dettagli di debug..." class="chalk-textarea" rows="6"></textarea>
+              </div>
+
+              <button class="chalk-btn" (click)="onSaveNote()">
+                📌 Appendi sulla Lavagna
+              </button>
+            </div>
+          </div>
+
+          <div class="blackboard-col-feed">
+            <div class="feed-section-header">
+              <h3>📌 Annotazioni Appese in Produzione</h3>
+              <span *ngIf="isNotesLoading" class="chalk-spinner">⏳ Sincronizzazione gesso...</span>
+            </div>
+
+            <div class="notes-scroll-container">
+              <div *ngIf="!isNotesLoading && notes.length === 0" class="empty-blackboard-placeholder">
+                La lavagna è pulita. Seleziona un ticket e scrivi una nota!
+              </div>
+
+              <div class="premium-chalk-card" *ngFor="let n of notes">
+                <div class="card-accent-line"></div>
+
+                <div class="card-meta">
+                  <span class="ticket-id-badge">🎫 Ticket ID: {{ n.id_Ticket }}</span>
+                  <span class="note-timestamp">📅 {{ n.date | date:'dd/MM/yyyy HH:mm' }}</span>
+                </div>
+
+                <h4 class="card-title">{{ n.title }}</h4>
+
+                <div *ngIf="editingNoteId !== n.id; else editMode" class="card-body">
+                  <p class="content-text">{{ n.content }}</p>
+
+                  <div class="associated-ticket-preview">
+                    <span class="label">Riferimento Ticket:</span>
+                    <p class="title-ref">"{{ n.ticketTitle || 'Associazione in corso...' }}"</p>
+                  </div>
+                </div>
+
+                <ng-template #editMode>
+                  <textarea [(ngModel)]="editingNoteContent" class="chalk-textarea-edit" rows="4"></textarea>
+                  <div class="edit-actions">
+                    <button class="btn-save-edit" (click)="onUpdateNote(n.id)">Salva</button>
+                    <button class="btn-cancel-edit" (click)="cancelNoteEdit()">Annulla</button>
+                  </div>
+                </ng-template>
+
+                <div class="card-actions" *ngIf="editingNoteId !== n.id">
+                  <button class="action-btn btn-edit" (click)="enableNoteEdit(n)">✏️ Modifica</button>
+                  <button class="action-btn btn-delete" (click)="triggerNoteDeleteConfirm(n.id)">🗑️ Elimina</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="chalk-pagination-bar" *ngIf="notesTotalPages > 1">
+              <button class="chalk-page-btn" [disabled]="notesPage === 0" (click)="notesPage = notesPage - 1; loadNotes()">◀ Indietro</button>
+              <span class="chalk-page-info">Pagina {{ notesPage + 1 }} di {{ notesTotalPages }}</span>
+              <button class="chalk-page-btn" [disabled]="notesPage === notesTotalPages - 1" (click)="notesPage = notesPage + 1; loadNotes()">Avanti ▶</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </ng-container>
+
+  </main>
+</div>
+
+<div class="modal-backdrop" *ngIf="showInfoModal && selectedTicketForModal" (click)="closeInfoModal()">
+  <div class="modal-card shadow animate-scale-up" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <div class="header-title-group">
+        <h2>{{ selectedTicketForModal.problem_title }}</h2>
+      </div>
+      <button class="close-modal-btn" (click)="closeInfoModal()">&times;</button>
+    </div>
+
+    <div class="modal-body">
+
+      <div class="info-section">
+        <h3>📋 Informazioni e Stato del Ticket</h3>
+        <div class="info-grid">
+          <div class="info-item">
+            <span class="label">Tipo di problema</span>
+            <span class="value"><span class="cat-pill">{{ selectedTicketForModal.problem }}</span></span>
+          </div>
+          <div class="info-item">
+            <span class="label">Urgenza Utente</span>
+            <span class="value urgency-text">Livello {{ selectedTicketForModal.urgency_percepite }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">Data Creazione</span>
+            <span class="value">📅 {{ selectedTicketForModal.start_date | date:'dd/MM/yyyy HH:mm' }}</span>
+          </div>
+
+          <div class="info-item">
+            <span class="label">Imposta Stato Gestione</span>
+            <div class="value">
+              <select [ngModel]="selectedTicketForModal.state" (change)="onStateChange(selectedTicketForModal, $event)" class="state-select-modal">
+                <option *ngFor="let s of allStates" [value]="s">{{ s.toUpperCase() }}</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="info-section">
+        <h3>💬 Descrizione del Problema</h3>
+        <div class="description-box">
+          {{ selectedTicketForModal.description }}
+        </div>
+      </div>
+
+      <div class="info-section attachment-bg-section" *ngIf="selectedTicketForModal.attachment">
+        <h3>📎 File di Testo Allegato</h3>
+        <div class="attachment-card">
+          <div class="file-info-row">
+            <span class="file-icon">📄</span>
+            <div class="file-name-group">
+              <span class="file-name">{{ selectedTicketForModal.attachment.name }}</span>
+            </div>
+          </div>
+          <div class="file-content-box">
+            {{ selectedTicketForModal.attachment.content }}
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" *ngIf="showDeleteConfirmModal" (click)="cancelDelete()">
+  <div class="modal-confirm-card shadow animate-scale-up" (click)="$event.stopPropagation()">
+    <div class="confirm-icon-box">⚠️</div>
+
+    <h2>Sei assolutamente sicuro/a?</h2>
+    <p>
+      Stai per eliminare definitivamente <strong>{{ selectedRows.size }}</strong> ticket selezionati.<br>
+    </p>
+
+    <div class="confirm-actions">
+      <button class="btn-cancel" (click)="cancelDelete()" [disabled]="isLoading">
+        Annulla
+      </button>
+      <button class="btn-confirm-danger" (click)="confirmDelete()" [disabled]="isLoading">
+        <span *ngIf="!isLoading">Sì, Elimina</span>
+        <span *ngIf="isLoading">Eliminazione...</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- 🖤 NUOVO MODALE CUSTOM: CONFERMA ELIMINAZIONE NOTA (DARK STYLE) -->
+<div class="modal-backdrop" *ngIf="showNoteDeleteConfirmModal" (click)="cancelNoteDelete()">
+  <div class="modal-confirm-card blackboard-confirm shadow animate-scale-up" (click)="$event.stopPropagation()">
+    <div class="confirm-icon-box note-warning-icon">⚠️</div>
+
+    <h2>Rimuovere questa nota?</h2>
+    <p>
+      L'annotazione verrà eliminata definitivamente dalla lavagna di produzione.<br>
+      Questa operazione non può essere annullata.
+    </p>
+
+    <div class="confirm-actions">
+      <button class="btn-cancel chalk-btn-cancel" (click)="cancelNoteDelete()">
+        Annulla
+      </button>
+      <button class="btn-confirm-danger chalk-btn-confirm" (click)="confirmNoteDelete()">
+        Sì, Elimina
+      </button>
+    </div>
+  </div>
+</div>
+

@@ -1,0 +1,59 @@
+<div class="auth-container">
+  <mat-card class="auth-card">
+    <div class="auth-header">
+      <div class="logo-circle">
+        <mat-icon color="primary">lock</mat-icon>
+      </div>
+      <mat-card-title>Bentornato</mat-card-title>
+      <p class="subtitle">Accedi per gestire le tue segnalazioni</p>
+    </div>
+
+    <form #loginForm="ngForm" (ngSubmit)="onLogin()">
+      <mat-card-content>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Email</mat-label>
+          <input matInput
+                 [(ngModel)]="loginData.email"
+                 name="email"
+                 #email="ngModel"
+                 required
+                 email
+                 placeholder="Inserisci la tua email">
+          <mat-icon matSuffix>email</mat-icon>
+          <mat-error *ngIf="email.invalid && email.touched">Inserisci un'email valida</mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Password</mat-label>
+          <input matInput
+                 [type]="hidePassword ? 'password' : 'text'"
+                 [(ngModel)]="loginData.password"
+                 name="password"
+                 #password="ngModel"
+                 required>
+          <button mat-icon-button matSuffix (click)="hidePassword = !hidePassword" type="button">
+            <mat-icon>{{hidePassword ? 'visibility_off' : 'visibility'}}</mat-icon>
+          </button>
+          <mat-error *ngIf="password.invalid && password.touched">La password è obbligatoria</mat-error>
+        </mat-form-field>
+
+      </mat-card-content>
+
+      <mat-card-actions>
+        <button mat-flat-button
+                color="primary"
+                type="submit"
+                class="login-btn"
+                [disabled]="loginForm.invalid">
+          ACCEDI
+        </button>
+      </mat-card-actions>
+    </form>
+
+    <div class="auth-footer">
+      <span>Non hai un account?</span>
+      <a routerLink="/register">Registrati ora</a>
+    </div>
+  </mat-card>
+</div>

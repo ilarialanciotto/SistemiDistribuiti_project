@@ -1,0 +1,110 @@
+<div class="dashboard-container">
+  <div class="main-layout">
+
+    <div class="form-section">
+      <mat-card class="form-card">
+        <mat-card-header>
+          <mat-card-title>Nuova Segnalazione</mat-card-title>
+        </mat-card-header>
+
+        <form [formGroup]="ticketForm" (ngSubmit)="onSubmitTicket()">
+          <mat-card-content style="padding: 20px 10px 10px;">
+
+            <div class="drop-zone"
+                 [class.drag-over]="isDragging"
+                 (dragover)="onDragOver($event)"
+                 (dragleave)="onDragLeave()"
+                 (drop)="onDrop($event)"
+                 (click)="!selectedFile && fileInput.click()">
+
+              <div *ngIf="!selectedFile" class="upload-placeholder">
+                <mat-icon class="cloud-icon">cloud_upload</mat-icon>
+                <p>Trascina un file di log o clicca per esplorare</p>
+                <small>Formati supportati: JSON, TXT, CSV, LOG</small>
+              </div>
+
+              <div *ngIf="selectedFile" class="file-chip-container">
+                <div class="file-chip">
+                  <mat-icon class="file-icon">insert_drive_file</mat-icon>
+                  <span class="file-name">{{ selectedFile.name }}</span>
+                  <button type="button" class="close-btn" (click)="$event.stopPropagation(); removeFile()">
+                    <mat-icon>cancel</mat-icon>
+                  </button>
+                </div>
+                <p class="success-text">✨ File pronto per l'analisi NLP</p>
+              </div>
+
+              <input type="file" #fileInput (change)="onFileSelected($event)" accept=".txt,.json,.log,.csv" style="display:none">
+            </div>
+
+            <div class="divider"><span>Oppure compila manualmente</span></div>
+
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Titolo del problema</mat-label>
+              <mat-icon matPrefix class="field-icon">subtitles</mat-icon>
+              <input matInput formControlName="problem_title" placeholder="Es. Errore autenticazione client OAuth2">
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Tipo di problema</mat-label>
+              <mat-icon matPrefix class="field-icon">category</mat-icon>
+              <mat-select formControlName="problem">
+                <mat-option value="software">Software</mat-option>
+                <mat-option value="hardware">Hardware</mat-option>
+                <mat-option value="web_service">Servizi Web</mat-option>
+                <mat-option value="network_configuration">Configurazione Rete</mat-option>
+                <mat-option value="generic">Generico</mat-option>
+                <mat-option [value]="''" class="reset-option">❌ Annulla selezione</mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Descrizione dettagliata</mat-label>
+              <mat-icon matPrefix class="field-icon">description</mat-icon>
+              <textarea matInput formControlName="description" rows="4" placeholder="Fornisci i dettagli dell'anomalia o incolla lo stacktrace..."></textarea>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Urgenza percepita</mat-label>
+              <mat-icon matPrefix class="field-icon">speed</mat-icon>
+              <mat-select formControlName="urgency_percepite">
+                <mat-option value="low">🟢 Bassa</mat-option>
+                <mat-option value="medium">🟡 Media</mat-option>
+                <mat-option value="high">🔴 Alta</mat-option>
+                <mat-option [value]="''" class="reset-option">❌ Annulla selezione</mat-option>
+              </mat-select>
+            </mat-form-field>
+          </mat-card-content>
+
+          <mat-card-actions align="end" style="padding: 0 10px 10px;">
+            <button mat-flat-button type="submit" [disabled]="!canSubmit()">
+              <mat-icon style="margin-right: 6px; font-size: 18px; width:18px; height:18px;">send</mat-icon> INVIA SEGNALAZIONE
+            </button>
+          </mat-card-actions>
+        </form>
+      </mat-card>
+    </div>
+
+    <div class="sidebar-section">
+      <mat-card class="user-card">
+        <mat-card-content>
+          <div class="user-info">
+            <div class="avatar">
+              <mat-icon>person</mat-icon> </div>
+            <h3>{{ currentUser?.username }}</h3>
+            <span class="role-badge">{{ role }}</span>
+          </div>
+
+          <mat-divider style="margin: 10px 0 15px; border-color: #f1f5f9;"></mat-divider>
+
+          <div class="actions">
+            <button mat-button color="warn" (click)="onLogout()" class="full-width-btn">
+              <mat-icon style="margin-right: 8px;">logout</mat-icon> Disconnetti
+            </button>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+  </div>
+</div>
